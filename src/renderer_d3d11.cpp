@@ -2095,7 +2095,7 @@ namespace bgfx { namespace d3d11
 			deviceCtx->PSSetConstantBuffers(0, 1, &program.m_fsh->m_buffer);
 
 			VertexBufferD3D11& vb = m_vertexBuffers[_blitter.m_vb->handle.idx];
-			VertexLayout& layout = m_vertexLayouts[_blitter.m_vb->layout.idx];
+			VertexLayout& layout = m_vertexLayouts[_blitter.m_vb->layoutHandle.idx];
 			uint32_t stride = layout.m_stride;
 			uint32_t offset = 0;
 			deviceCtx->IASetVertexBuffers(0, 1, &vb.m_ptr, &stride, &offset);
@@ -2600,19 +2600,19 @@ namespace bgfx { namespace d3d11
 
 				for (uint8_t stream = 0; stream < _numStreams; ++stream)
 				{
-					VertexLayout layout;
-					bx::memCopy(&layout, _layouts[stream], sizeof(VertexLayout) );
+					VertexLayout vertexLayout;
+					bx::memCopy(&vertexLayout, _layouts[stream], sizeof(VertexLayout) );
 
 					const bool last = stream == _numStreams-1;
 
 					for (uint32_t ii = 0; ii < Attrib::Count; ++ii)
 					{
 						uint16_t mask = attrMask[ii];
-						uint16_t attr = (layout.m_attributes[ii] & mask);
+						uint16_t attr = (vertexLayout.m_attributes[ii] & mask);
 						if (0          == attr
 						||  UINT16_MAX == attr)
 						{
-							layout.m_attributes[ii] = last ? ~attr : UINT16_MAX;
+							vertexLayout.m_attributes[ii] = last ? ~attr : UINT16_MAX;
 						}
 						else
 						{
@@ -2620,7 +2620,7 @@ namespace bgfx { namespace d3d11
 						}
 					}
 
-					elem = fillVertexLayout(stream, elem, layout);
+					elem = fillVertexLayout(stream, elem, vertexLayout);
 				}
 
 				uint32_t num = uint32_t(elem-vertexElements);
@@ -3829,7 +3829,7 @@ namespace bgfx { namespace d3d11
 
 	void VertexBufferD3D11::create(uint32_t _size, void* _data, VertexLayoutHandle _layoutHandle, uint16_t _flags)
 	{
-		m_layout = _layoutHandle;
+		m_layoutHandle = _layoutHandle;
 		uint16_t stride = isValid(_layoutHandle)
 			? s_renderD3D11->m_vertexLayouts[_layoutHandle.idx].m_stride
 			: 0
@@ -5893,15 +5893,15 @@ namespace bgfx { namespace d3d11
 							streamMask >>= ntz;
 							idx         += ntz;
 
-							currentState.m_stream[idx].m_layout        = draw.m_stream[idx].m_layout;
+							currentState.m_stream[idx].m_layoutHandle        = draw.m_stream[idx].m_layoutHandle;
 							currentState.m_stream[idx].m_handle      = draw.m_stream[idx].m_handle;
 							currentState.m_stream[idx].m_startVertex = draw.m_stream[idx].m_startVertex;
 
 							const uint16_t handle = draw.m_stream[idx].m_handle.idx;
 							const VertexBufferD3D11& vb = m_vertexBuffers[handle];
-							const uint16_t decl = isValid(draw.m_stream[idx].m_layout)
-								? draw.m_stream[idx].m_layout.idx
-								: vb.m_layout.idx;
+							const uint16_t decl = isValid(draw.m_stream[idx].m_layoutHandle)
+								? draw.m_stream[idx].m_layoutHandle.idx
+								: vb.m_layoutHandle.idx;
 							const VertexLayout& layout = m_vertexLayouts[decl];
 							const uint32_t stride = layout.m_stride;
 
